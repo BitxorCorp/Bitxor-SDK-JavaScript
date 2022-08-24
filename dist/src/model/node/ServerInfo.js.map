@@ -1,0 +1,1 @@
+{"version":3,"file":"ServerInfo.js","sourceRoot":"","sources":["../../../../src/model/node/ServerInfo.ts"],"names":[],"mappings":";AAAA;;;;;;;;;;;;;;GAcG;;;AAIH;;GAEG;AACH,MAAa,UAAU;IACnB;;;;OAIG;IACH;IACI;;OAEG;IACa,WAAmB;IACnC;;OAEG;IACa,UAAkB;IAClC;;OAEG;IACa,UAAkC;QARlC,gBAAW,GAAX,WAAW,CAAQ;QAInB,eAAU,GAAV,UAAU,CAAQ;QAIlB,eAAU,GAAV,UAAU,CAAwB;IACnD,CAAC;CACP;AApBD,gCAoBC"}

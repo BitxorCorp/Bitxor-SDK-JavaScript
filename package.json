@@ -1,0 +1,91 @@
+{
+  "bugs": {
+    "url": "http://gitlab.local.bitxor.org/bitxor-nodejs-sdk/bitxor-sdk/issues"
+  },
+  "dependencies": {
+    "@js-joda/core": "^3.2.0",
+    "@types/node": "^9.6.0",
+    "bitxor-catbuffer-typescript": "git+http://gitlab.local.bitxor.org/bitxor-nodejs-sdk/bitxor-catbuffer-typescript.git#main",
+    "bitxor-openapi-typescript-fetch-client": "git+http://gitlab.local.bitxor.org/bitxor-nodejs-sdk/bitxor-openapi-typescript-fetch-client.git#main",
+    "crypto-js": "^4.0.0",
+    "futoin-hkdf": "^1.3.2",
+    "js-sha256": "^0.9.0",
+    "js-sha3": "^0.8.0",
+    "js-sha512": "^0.8.0",
+    "long": "^4.0.0",
+    "merkletreejs": "^0.2.9",
+    "node-fetch": "^2.6.0",
+    "ripemd160": "^2.0.2",
+    "rxjs": "^7.4.0",
+    "tweetnacl": "^1.0.3",
+    "utf8": "^2.1.2",
+    "ws": "^7.3.1"
+  },
+  "description": "Reactive Bitxor sdk for typescript and javascript",
+  "devDependencies": {
+    "@types/chai": "^4.2.12",
+    "@types/lodash": "^4.14.161",
+    "@types/long": "^4.0.1",
+    "@types/mocha": "^9.0.0",
+    "@types/ripemd160": "^2.0.0",
+    "@types/utf8": "^2.1.6",
+    "@types/ws": "^3.2.1",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "assert": "^1.5.0",
+    "chai": "^4.2.0",
+    "coveralls": "^3.1.0",
+    "create-ts-index": "^1.13.6",
+    "eslint": "^8.0.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "mocha": "^9.1.3",
+    "node-forge": ">=0.10.0",
+    "nyc": "^15.1.0",
+    "pre-commit": "^1.2.2",
+    "prettier": "^2.1.2",
+    "prettier-plugin-organize-imports": "^1.1.1",
+    "secure-random": "^1.1.2",
+    "shx": "^0.3.2",
+    "ts-mockito": "^2.6.1",
+    "ts-node": "^8.10.2",
+    "typedoc": "^0.22.10",
+    "typescript": "^4.5.4",
+    "typescript-require": "^0.2.10"
+  },
+  "engines": {
+    "node": ">=12.22.1"
+  },
+  "homepage": "http://gitlab.local.bitxor.org/bitxor-nodejs-sdk/bitxor-sdk#readme",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "name": "bitxor-sdk",
+  "nyc": {
+    "exclude-after-remap": false,
+    "exclude": [
+      "**/*.spec.js"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+http://gitlab.local.bitxor.org/bitxor-nodejs-sdk/bitxor-sdk.git"
+  },
+  "scripts": {
+    "build": "",
+    "build:dev": "shx rm -rf dist/ && tsc",
+    "coveralls-report": "cat ./coverage/lcov.info | coveralls",
+    "create-index-files": "cti create ./src -b -n",
+    "doc": "typedoc --out \"ts-docs/$(npm run version --silent)\" src",
+    "prepack": "npm run build",
+    "pretest": "npm run build",
+    "prettier": "prettier --write ./src",
+    "style:fix": "npm run create-index-files && npm run prettier",
+    "test:all": "mocha --ui bdd --recursive ./dist/ --timeout 90000 --unhandled-rejections=strict",
+    "test:cov": "nyc --reporter=lcov --reporter=text-summary npm t",
+    "test:coveralls": "npm run test:cov | coveralls",
+    "version": "echo $npm_package_version",
+    "watch": "tsc --watch"
+  },
+  "typings": "dist/index.d.ts",
+  "version": "1.0.1"
+}

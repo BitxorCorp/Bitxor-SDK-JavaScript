@@ -1,0 +1,217 @@
+/*
+ * Copyright 2022 Kriptxor Corp, Microsula S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { ResolutionStatementInfoDTO, TransactionStatementInfoDTO } from 'bitxor-openapi-typescript-fetch-client';
+import { DtoMapping } from '../../core/utils';
+import { UnresolvedMapping } from '../../core/utils/UnresolvedMapping';
+import { Address } from '../../model/account/Address';
+import { UnresolvedAddress } from '../../model/account/UnresolvedAddress';
+import { NamespaceId } from '../../model/namespace/NamespaceId';
+import { ArtifactExpiryReceipt } from '../../model/receipt/ArtifactExpiryReceipt';
+import { BalanceChangeReceipt } from '../../model/receipt/BalanceChangeReceipt';
+import { BalanceTransferReceipt } from '../../model/receipt/BalanceTransferReceipt';
+import { InflationReceipt } from '../../model/receipt/InflationReceipt';
+import { Receipt } from '../../model/receipt/Receipt';
+import { ReceiptSource } from '../../model/receipt/ReceiptSource';
+import { ReceiptType } from '../../model/receipt/ReceiptType';
+import { ResolutionEntry } from '../../model/receipt/ResolutionEntry';
+import { AddressResolutionStatement, ResolutionStatement, TokenIdResolutionStatement } from '../../model/receipt/ResolutionStatement';
+import { ResolutionType } from '../../model/receipt/ResolutionType';
+import { TransactionStatement } from '../../model/receipt/TransactionStatement';
+import { TokenId } from '../../model/token/TokenId';
+import { UnresolvedTokenId } from '../../model/token/UnresolvedTokenId';
+import { UInt64 } from '../../model/UInt64';
+
+/**
+ * @interal
+ * @param unresolvedAddress unresolved address
+ * @returns {Address | NamespaceId}
+ */
+const extractUnresolvedAddress = (unresolvedAddress: any): UnresolvedAddress => {
+    if (typeof unresolvedAddress === 'string') {
+        return UnresolvedMapping.toUnresolvedAddress(unresolvedAddress);
+    } else if (typeof unresolvedAddress === 'object') {
+        // Is JSON object
+        if (unresolvedAddress.hasOwnProperty('address')) {
+            return Address.createFromRawAddress(unresolvedAddress.address);
+        } else if (unresolvedAddress.hasOwnProperty('id')) {
+            return NamespaceId.createFromEncoded(unresolvedAddress.id);
+        }
+    }
+    throw new Error(`UnresolvedAddress: ${unresolvedAddress} type is not recognised`);
+};
+
+/**
+ * @internal
+ * @param statementInfoDTO
+ * @returns {TokenIdResolutionStatement}
+ * @constructor
+ */
+export const createTokenResolutionStatement = (statementInfoDTO: ResolutionStatementInfoDTO): TokenIdResolutionStatement => {
+    const statementDTO = statementInfoDTO.statement;
+    return new ResolutionStatement(
+        ResolutionType.Token,
+        UInt64.fromNumericString(statementDTO.height),
+        UnresolvedMapping.toUnresolvedToken(statementDTO.unresolved),
+        statementDTO.resolutionEntries.map((entry) => {
+            return new ResolutionEntry(new TokenId(entry.resolved), new ReceiptSource(entry.source.primaryId, entry.source.secondaryId));
+        }),
+    );
+};
+
+/**
+ * @internal
+ * @param statementInfoDTO
+ * @returns {AddressResolutionStatement}
+ * @constructor
+ */
+export const createAddressResolutionStatement = (statementInfoDTO: ResolutionStatementInfoDTO): AddressResolutionStatement => {
+    const statementDTO = statementInfoDTO.statement;
+    return new ResolutionStatement(
+        ResolutionType.Address,
+        UInt64.fromNumericString(statementDTO.height),
+        extractUnresolvedAddress(statementDTO.unresolved),
+        statementDTO.resolutionEntries.map((entry) => {
+            return new ResolutionEntry(
+                DtoMapping.toAddress(entry.resolved),
+                new ReceiptSource(entry.source.primaryId, entry.source.secondaryId),
+            );
+        }),
+    );
+};
+
+/**
+ * @internal
+ * @param receiptDTO
+ * @returns {BalanceChangeReceipt}
+ * @constructor
+ */
+const createBalanceChangeReceipt = (receiptDTO): Receipt => {
+    return new BalanceChangeReceipt(
+        DtoMapping.toAddress(receiptDTO.targetAddress),
+        new TokenId(receiptDTO.tokenId),
+        UInt64.fromNumericString(receiptDTO.amount),
+        receiptDTO.version,
+        receiptDTO.type,
+    );
+};
+
+/**
+ * @internal
+ * @param receiptDTO
+ * @returns {BalanceTransferReceipt}
+ * @constructor
+ */
+const createBalanceTransferReceipt = (receiptDTO): Receipt => {
+    return new BalanceTransferReceipt(
+        DtoMapping.toAddress(receiptDTO.senderAddress),
+        DtoMapping.toAddress(receiptDTO.recipientAddress),
+        new TokenId(receiptDTO.tokenId),
+        UInt64.fromNumericString(receiptDTO.amount),
+        receiptDTO.version,
+        receiptDTO.type,
+    );
+};
+
+/**
+ * @internal
+ * @param receiptType receipt type
+ * @param id Artifact id
+ * @returns {UnresolvedTokenId}
+ */
+const extractArtifactId = (receiptType: ReceiptType, id: string): UnresolvedTokenId => {
+    switch (receiptType) {
+        case ReceiptType.Token_Expired:
+            return new TokenId(id);
+        case ReceiptType.Namespace_Expired:
+        case ReceiptType.Namespace_Deleted:
+            return NamespaceId.createFromEncoded(id);
+        default:
+            throw new Error('Receipt type is not supported.');
+    }
+};
+
+/**
+ * @internal
+ * @param receiptDTO
+ * @returns {ArtifactExpiryReceipt}
+ * @constructor
+ */
+const createArtifactExpiryReceipt = (receiptDTO): Receipt => {
+    return new ArtifactExpiryReceipt(extractArtifactId(receiptDTO.type, receiptDTO.artifactId), receiptDTO.version, receiptDTO.type);
+};
+
+/**
+ * @internal
+ * @param receiptDTO
+ * @returns {InflationReceipt}
+ * @constructor
+ */
+const createInflationReceipt = (receiptDTO): Receipt => {
+    return new InflationReceipt(
+        new TokenId(receiptDTO.tokenId),
+        UInt64.fromNumericString(receiptDTO.amount),
+        receiptDTO.version,
+        receiptDTO.type,
+    );
+};
+
+/**
+ * @param receiptDTO
+ * @returns {Receipt}
+ * @constructor
+ */
+export const CreateReceiptFromDTO = (receiptDTO): Receipt => {
+    switch (receiptDTO.type) {
+        case ReceiptType.Harvest_Fee:
+        case ReceiptType.LockHash_Created:
+        case ReceiptType.LockHash_Completed:
+        case ReceiptType.LockHash_Expired:
+        case ReceiptType.LockSecret_Created:
+        case ReceiptType.LockSecret_Completed:
+        case ReceiptType.LockSecret_Expired:
+            return createBalanceChangeReceipt(receiptDTO);
+        case ReceiptType.Token_Levy:
+        case ReceiptType.Token_Rental_Fee:
+        case ReceiptType.Namespace_Rental_Fee:
+            return createBalanceTransferReceipt(receiptDTO);
+        case ReceiptType.Token_Expired:
+        case ReceiptType.Namespace_Expired:
+        case ReceiptType.Namespace_Deleted:
+            return createArtifactExpiryReceipt(receiptDTO);
+        case ReceiptType.Inflation:
+            return createInflationReceipt(receiptDTO);
+        default:
+            throw new Error(`Receipt type: ${receiptDTO.type} not recognized.`);
+    }
+};
+
+/**
+ * @internal
+ * @param statementInfoDTO
+ * @returns {TransactionStatement}
+ * @constructor
+ */
+export const createTransactionStatement = (statementInfoDTO: TransactionStatementInfoDTO): TransactionStatement => {
+    const statementDTO = statementInfoDTO.statement;
+    return new TransactionStatement(
+        UInt64.fromNumericString(statementDTO.height),
+        new ReceiptSource(statementDTO.source.primaryId, statementDTO.source.secondaryId),
+        statementDTO.receipts.map((receipt) => {
+            return CreateReceiptFromDTO(receipt);
+        }),
+    );
+};
