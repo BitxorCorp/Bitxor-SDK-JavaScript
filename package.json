@@ -71,7 +71,7 @@
     "url": "git+https://github.com/BitxorCorp/Bitxor-SDK-JavaScript.git"
   },
   "scripts": {
-    "build": "",
+    "build": "shx rm -rf dist/ && tsc",
     "build:dev": "shx rm -rf dist/ && tsc",
     "coveralls-report": "cat ./coverage/lcov.info | coveralls",
     "create-index-files": "cti create ./src -b -n",
