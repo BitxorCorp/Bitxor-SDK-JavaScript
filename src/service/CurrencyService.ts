@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { firstValueFrom, forkJoin, Observable } from 'rxjs';
+import { from, forkJoin, Observable } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 import { DtoMapping } from '../core/utils/DtoMapping';
 import { RepositoryFactory } from '../infrastructure/RepositoryFactory';
@@ -63,11 +63,13 @@ export class CurrencyService implements ICurrencyService {
 
         // get tokenInfo and token names from the network,
         // build network currency models
-        return forkJoin({
-            tokensInfo: firstValueFrom(tokenHttp.getTokens(tokenIds)),
-            tokenNames: firstValueFrom(namespaceHttp.getTokensNames(tokenIds)),
-        }).pipe(
-            map(({ tokensInfo, tokenNames }) =>
+        return from(
+            Promise.all([
+                tokenHttp.getTokens(tokenIds).toPromise(),
+                namespaceHttp.getTokensNames(tokenIds).toPromise()
+            ])
+        ).pipe(
+            map(([tokensInfo, tokenNames]) =>
                 tokensInfo.map((tokenInfo) => {
                     const thisTokenNames = tokenNames.find((mn) => mn.tokenId.equals(tokenInfo.id)) || new TokenNames(tokenInfo.id, []);
                     return this.getCurrency(tokenInfo, thisTokenNames);
