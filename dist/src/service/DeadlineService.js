@@ -26,7 +26,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DeadlineService = void 0;
 const core_1 = require("@js-joda/core");
-const rxjs_1 = require("rxjs");
 const transaction_1 = require("../model/transaction");
 /**
  * A factory service that allows the client to generate Deadline objects based on different strategies.
@@ -54,7 +53,8 @@ class DeadlineService {
      */
     createDeadlineUsingServerTime(deadline = transaction_1.defaultDeadline, chronoUnit = transaction_1.defaultChronoUnit) {
         return __awaiter(this, void 0, void 0, function* () {
-            const serverTime = (yield (0, rxjs_1.firstValueFrom)(this.repositoryFactory.createNodeRepository().getNodeTime())).receiveTimeStamp.compact();
+            const serverTimeObservable = this.repositoryFactory.createNodeRepository().getNodeTime();
+            const serverTime = (yield serverTimeObservable.toPromise()).receiveTimeStamp.compact();
             return transaction_1.Deadline.createFromAdjustedValue(core_1.Duration.ofMillis(serverTime).plus(deadline, chronoUnit).toMillis());
         });
     }
@@ -83,8 +83,8 @@ class DeadlineService {
      */
     static create(repositoryFactory) {
         return __awaiter(this, void 0, void 0, function* () {
-            const epochAdjustment = yield (0, rxjs_1.firstValueFrom)(repositoryFactory.getEpochAdjustment());
-            const serverTime = (yield (0, rxjs_1.firstValueFrom)(repositoryFactory.createNodeRepository().getNodeTime())).receiveTimeStamp.compact();
+            const epochAdjustment = yield repositoryFactory.getEpochAdjustment().toPromise();
+            const serverTime = (yield repositoryFactory.createNodeRepository().getNodeTime().toPromise()).receiveTimeStamp.compact();
             return new DeadlineService(repositoryFactory, epochAdjustment, serverTime);
         });
     }

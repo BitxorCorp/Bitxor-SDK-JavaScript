@@ -57,10 +57,10 @@ class CurrencyService {
         const namespaceHttp = this.repositoryFactory.createNamespaceRepository();
         // get tokenInfo and token names from the network,
         // build network currency models
-        return (0, rxjs_1.forkJoin)({
-            tokensInfo: (0, rxjs_1.firstValueFrom)(tokenHttp.getTokens(tokenIds)),
-            tokenNames: (0, rxjs_1.firstValueFrom)(namespaceHttp.getTokensNames(tokenIds)),
-        }).pipe((0, operators_1.map)(({ tokensInfo, tokenNames }) => tokensInfo.map((tokenInfo) => {
+        return (0, rxjs_1.from)(Promise.all([
+            tokenHttp.getTokens(tokenIds).toPromise(),
+            namespaceHttp.getTokensNames(tokenIds).toPromise()
+        ])).pipe((0, operators_1.map)(([tokensInfo, tokenNames]) => tokensInfo.map((tokenInfo) => {
             const thisTokenNames = tokenNames.find((mn) => mn.tokenId.equals(tokenInfo.id)) || new token_1.TokenNames(tokenInfo.id, []);
             return this.getCurrency(tokenInfo, thisTokenNames);
         })));
